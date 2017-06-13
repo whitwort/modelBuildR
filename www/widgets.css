@@ -1,0 +1,12 @@
+.row {
+    margin-bottom: 10px;    
+}
+
+.form-control {
+    width: 100%;
+}
+
+.shiny-input-container:not(.shiny-input-container-inline) {
+    width: auto;
+    max-width: none;
+}

@@ -1,0 +1,32 @@
+<div class = "form-group shiny-input-container">
+    <p>{{description}}<br></p>
+    
+    {{#each states}}
+    <div class = "row" id="equation-container-{{@index}}">
+        <div class = "col-sm-2">
+            <label>d{{this}}/dt = </label>
+        </div>
+        <div class = "col-sm-10">
+            <select multiple placeholder="Enter an equation..." id="equation-{{@index}}">
+    		    <option value=""></option>
+    			<optgroup label="Parameters">
+    				{{#each ../parameters}}
+                        <option value="parameters.{{@index}}">{{this}}</option>
+                    {{/each}}
+    			</optgroup>
+    			<optgroup label="States">
+                    {{#each ../states}}
+                        <option value="states.{{@index}}">{{this}}</option>
+                    {{/each}}
+    			</optgroup>
+                <optgroup label="Math">
+                    {{#each ../math}}
+                        <option value="math.{{@index}}">{{this}}</option>
+                    {{/each}}
+    			</optgroup>
+			</select>
+        </div>
+    </div>
+    {{/each}}
+    
+</div>

@@ -1,0 +1,6 @@
+.Rproj.user
+.Rhistory
+.RData
+restart.txt
+modelBuildR.Rproj
+packrat/lib*/

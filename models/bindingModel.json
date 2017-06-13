@@ -1,0 +1,66 @@
+{
+	"name" : "Binding Model",
+	"description" : "A model of a bimolecular binding reaction",
+	"solver" : null,
+	"parameters" : {
+		"kon" : 1000,
+		"koff" : 10
+	},
+	"parameterUnits" : "s-1",
+	"states" : {
+		"[A]" : 0.001,
+		"[B]" : 0.01,
+		"[AB]" : 0
+	},
+	"stateUnits" : "mM",
+	"timeStart" : 0.01,
+	"timeEnd" : 1,
+	"timeUnits" : "s",
+	"equations" : [
+		[
+			"math.4",
+			"parameters.1",
+			"math.3",
+			"states.2",
+			"math.5",
+			"math.1",
+			"math.4",
+			"parameters.0",
+			"math.3",
+			"states.0",
+			"math.3",
+			"states.1",
+			"math.5"
+		],
+		[
+			"math.4",
+			"parameters.1",
+			"math.3",
+			"states.2",
+			"math.5",
+			"math.1",
+			"math.4",
+			"parameters.0",
+			"math.3",
+			"states.0",
+			"math.3",
+			"states.1",
+			"math.5"
+		],
+		[
+			"math.4",
+			"parameters.0",
+			"math.3",
+			"states.0",
+			"math.3",
+			"states.1",
+			"math.5",
+			"math.1",
+			"math.4",
+			"parameters.1",
+			"math.3",
+			"states.2",
+			"math.5"
+		]
+	]
+}

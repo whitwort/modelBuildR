@@ -1,0 +1,87 @@
+{
+	"name" : "Enzyme Model",
+	"description" : "A model of Michaelis-Menton enzyme kinetics",
+	"solver" : null,
+	"parameters" : {
+		"kon" : 1000,
+		"koff" : 10,
+		"kcat" : 1
+	},
+	"parameterUnits" : "s-1",
+	"states" : {
+		"[E]" : 0.001,
+		"[S]" : 0.01,
+		"[ES]" : 0,
+		"[P]" : 0
+	},
+	"stateUnits" : "mM",
+	"timeStart" : 1,
+	"timeEnd" : 10,
+	"timeUnits" : "s",
+	"equations" : [
+		[
+			"math.4",
+			"parameters.1",
+			"math.3",
+			"states.2",
+			"math.5",
+			"math.1",
+			"math.4",
+			"parameters.0",
+			"math.3",
+			"states.0",
+			"math.3",
+			"states.1",
+			"math.5",
+			"math.0",
+			"math.4",
+			"parameters.2",
+			"math.3",
+			"states.2",
+			"math.5"
+		],
+		[
+			"math.4",
+			"parameters.1",
+			"math.3",
+			"states.2",
+			"math.5",
+			"math.1",
+			"math.4",
+			"parameters.0",
+			"math.3",
+			"states.0",
+			"math.3",
+			"states.1",
+			"math.5"
+		],
+		[
+			"math.4",
+			"parameters.0",
+			"math.3",
+			"states.0",
+			"math.3",
+			"states.1",
+			"math.5",
+			"math.1",
+			"math.4",
+			"parameters.1",
+			"math.3",
+			"states.2",
+			"math.5",
+			"math.1",
+			"math.4",
+			"parameters.2",
+			"math.3",
+			"states.2",
+			"math.5"
+		],
+		[
+			"math.4",
+			"parameters.2",
+			"math.3",
+			"states.2",
+			"math.5"
+		]
+	]
+}
