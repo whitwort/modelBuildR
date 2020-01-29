@@ -3,9 +3,16 @@ library(jsonlite)
 
 # UI generators
 optionsPanel <- function(model) {
-    parameterRange <- (max(model$parameters) - min(model$parameters)) 
-    stateRange     <- (max(model$states)     - min(model$states))
-    
+    parameterRange <- if (length(model$parameters) > 0) {
+                        (max(model$parameters) - min(model$parameters)) 
+                      } else {
+                        0    
+                      }
+    stateRange     <- if (length(model$states) > 0) {
+                        (max(model$states)     - min(model$states))
+                      } else {
+                        0
+                      }
     
     panel( "Advanced options"
          , selectInput( 'solver'
@@ -72,9 +79,27 @@ parametersPanel <- function(model) {
          )
 }
 
+simulationControls <- function(model) {
+    sidebarHeader <- "The simulation will update as you change the parameters below.  Use the 'Simulation' tab to iterate over a series of input parameters."
+    stateFormat   <- function(name) {
+                       paste("Initial", name, model$stateUnits)
+                     }
+    
+    
+    list( helpText(HTML(markdownToHTML(text = sidebarHeader, fragment.only = TRUE)))
+        , lapply( names(model$states)
+                , function(name) {
+                    numericInput( name
+                                , stateFormat(name)
+                                , model$states[name]
+                                )  
+                  }
+                )
+        )
+}
 
 # Server runtime
-shinyServer(function(input, output, session) {
+function(input, output, session) {
 
     model <- reactive({ 
         sapply(modelSchema, function(s) { input[[s]] }, simplify = FALSE)
@@ -113,51 +138,114 @@ shinyServer(function(input, output, session) {
         namespace <- c(math, parameters, states)
         sapply( input$equations
               , function(eq) {
-                  if (is.na(eq)) {
-                      NA
-                  } else {
-                      paste(namespace[as.character(eq)], collapse = "")    
-                  }
+                  paste(namespace[as.character(eq)], collapse = "")   
                 }
               )
     })
     
-    # Output bindings
-    output$equations <- renderEquationErrors({
+    checkEquationErrors <- reactive({
         equations <- rateEquationText()
         test <- sapply( equations
                       , function(eq) {
                           if (is.na(eq)) { return(FALSE) }
-                          p <- try(parse(text = eq), silent = FALSE)
+                          p <- try(parse(text = eq), silent = TRUE)
                           if (class(p) == "expression") { TRUE } else { FALSE }
-                        }
+                      }
                       , USE.NAMES = FALSE
                       )
         
         if (length(test) < length(input$states)) {
             test[ (length(test) + 1):length(input$states) ] <- FALSE
         }
-
+        
         as.list(test)
     })
     
-    output$download <- downloadHandler( filename = paste(model()$name, "json", sep = ".")
+    # Issue error if state and parameter names are not all unique; true if all are unique
+    checkUniqueNames <- reactive({
+        model <- model()
+        n     <- c(names(model$states), names(model$parameters))
+        !any(duplicated(n))
+    })
+    
+    observe({
+        if (!checkUniqueNames()) {
+            model <- model()
+            if (any(duplicated(names(model$states)))) {
+                session$sendCustomMessage( 'addClass'
+                                         , list( selector = "#states-panel"
+                                               , class = "panel-danger"
+                                               )
+                                         )  
+            } else if (any(duplicated(names(model$parameters)))) {
+                session$sendCustomMessage( 'addClass'
+                                         , list( selector = "#parameters-panel"
+                                               , class = "panel-danger"
+                                               )
+                                         )  
+            } else {
+                session$sendCustomMessage( 'addClass'
+                                         , list( selector = ".danger-toggle"
+                                               , class = "panel-danger"
+                                               )
+                                         )  
+            }
+        } else {
+            session$sendCustomMessage( 'removeClass'
+                                     , list( selector = ".danger-toggle"
+                                           , class = "panel-danger"
+                                           )
+                                     )
+        }
+    })
+    
+    # Hide run problem if the model is empty or has errors
+    observe({
+        model  <- model()
+        errors <- !length(model$equations) > 0 || 
+                  !checkUniqueNames() || 
+                  !all(checkEquationErrors())
+
+        if (errors) {
+          print("errors")
+          hideTab('navbar', 'run', session = session)
+        } else {
+          print("no errors")
+          showTab('navbar', 'run')
+        }
+        
+    })
+    
+    # Build page output bindings
+    output$equations <- renderEquationErrors({
+        checkEquationErrors()
+    })
+    
+    output$download <- downloadHandler( filename = function() { 
+                                            paste(model()$name, "json", sep = ".")
+                                        }
                                       , content  = function(tmp) { 
                                             cat(toJSON(as.list(model()), pretty = TRUE), file = tmp)
                                         }
                                       )
     
-    # Dynamic UI elements
     output$optionsPanel <- renderUI({ optionsPanel(model()) })
     
-    # Test
-    output$debug <- renderText({
-        toJSON(as.list(model()), pretty = TRUE)
-        #print(toJSON(as.list(input$equations), pretty = TRUE))
-        #print(toJSON(as.list(session$clientData)))
-        #toJSON(as.list(session$clientData), pretty = TRUE)
-        #print(input$open)
+    # Run page output bindings
+    output$runPanel <- renderUI({
+        model <- model()
+        
+        controls <- tagList(simulationControls(model))
+        kinetics <- tabPanel("Simulate")
+        summary  <- tabPanel("Summarize")
+        
+        fluidPage( titlePanel(model$name)
+                 , fluidRow( column(3, wellPanel(controls))
+                           , column(9, tabsetPanel(kinetics, summary, id = 'tabs'))
+                           )
+                 )
     })
     
-})
+
+}
 

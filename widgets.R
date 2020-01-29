@@ -55,10 +55,11 @@ downloadButton <- function (outputId, label = "Download", class = NULL, icon = i
 
 
 # Custom controls
-panel <- function(heading, ..., class = 'panel-default') {
+panel <- function(heading, ..., class = 'panel-default', id = '') {
     div( div(heading, class = "panel-heading")
        , div(..., class = "panel-body")
        , class = paste('panel', class)
+       , id = id
        )
 }
 
@@ -100,7 +101,7 @@ dropdownInput <- function(inputId, label, choices, class = NULL, icon = NULL, ..
                                 tags$li(class = "divider")
                             } else if (is(choices[[name]], 'shiny.tag')) {
                                 tags$li(choices[[name]])
-                            }else {
+                            } else {
                                 tags$li(tags$a( href  = "#"
                                               , value = choices[[name]]
                                               , choices[[name]]
@@ -113,6 +114,7 @@ dropdownInput <- function(inputId, label, choices, class = NULL, icon = NULL, ..
        )
     
 }
+
 registerInputHandler("modelBuildR.dropdown-input", function(data, shinysession, name) {
     data
 }, force = TRUE)

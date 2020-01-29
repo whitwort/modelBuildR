@@ -10,6 +10,14 @@
         
     }
     
+    /* Add custom functions to add or remove CSS classes */
+    Shiny.addCustomMessageHandler('addClass', function(message) {
+        $(message.selector).addClass(message.class)
+    })
+    Shiny.addCustomMessageHandler('removeClass', function(message) {
+        $(message.selector).removeClass(message.class)
+    })
+    
     /* buttonDropdownInput */
     var dropdownInputBinding = new Shiny.InputBinding()
     $.extend(dropdownInputBinding, {

@@ -21,19 +21,21 @@ buildPage <- tabPanel( 'build'
                      
                      , fluidRow( column( 4
                                        , panel( "States"
-                                              , p('State variables start with initial values that can change over time during the simulation.  Useful for tracking things like molecular concentrations or populations.')
+                                              , p('State variables start with initial values that can change over time during the simulation.  Useful for tracking things like molecular concentrations or populations. State and parameter names must all be unique.')
                                               , vectorInput('states', type = 'number', valueLabel = "Initial", nameLabel = "Name")
                                               , textInput('stateUnits', 'Units', value = 'mM', horizontal = TRUE)
-                                              , class = "panel panel-success"
+                                              , class = "panel panel-success danger-toggle"
+                                              , id = "states-panel"
                                               )
                                         )
                          
                                 , column( 4
                                        , panel( "Parameters"
-                                              , p("Parameters are variables that can be set before the simulation is run but don't change over time.  Useful for fixed rates like kinetic constants.")
+                                              , p("Parameters are variables that can be set before the simulation is run but don't change over time.  Useful for fixed rates like kinetic constants.  State and parameter names must all be unique.")
                                               , vectorInput('parameters', type = 'number', valueLabel = "Default", nameLabel = "Name")
                                               , textInput('parameterUnits', 'Units', value = 's-1', horizontal = TRUE)
-                                              , class = "panel panel-info"
+                                              , class = "panel panel-info danger-toggle"
+                                              , id = "parameters-panel"
                                               )
                                        )
                                , column( 4
@@ -60,13 +62,15 @@ buildPage <- tabPanel( 'build'
                                        )
                                )
                      
-                     , fluidRow( column(8, textOutput('debug'), class = 'well', offset = 2))
+                     # , fluidRow( column(8, textOutput('debug'), class = 'well', offset = 2))
                      ) 
 
 runPage   <- tabPanel( 'run'
+                     , uiOutput('runPanel')
                      )
 
 app       <- navbarPage( 'modelBuildR'
+                       , id = "navbar"
                        , buildPage
                        , runPage
                        , header = tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "widgets.css"))
