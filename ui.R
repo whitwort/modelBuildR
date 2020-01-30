@@ -7,8 +7,8 @@ openChoices <- c( as.list(names(installedModels))
 
 buildPage <- tabPanel( 'build'
                      , h2('Build a model')
-                     , p("You can use this page to build a mathematical model based on a set of time resolved differential equations.  When you've finished you can run simulations with your model on the 'Run' tab above.")
-                     
+                     , p("You can use this page to build a mathematical model based on a set of time resolved differential equations.")
+                     , p("When you've finished you can run simulations with your model on the 'Run' tab above.  If you don't see a Run tab it's because there is a problem with your model; look for boxes highlighted in red to find the problem.")
                      , fluidRow( column( 8
                                        , textInput('name', 'Name', value = 'myModel')
                                        , textareaInput('description', 'Description')

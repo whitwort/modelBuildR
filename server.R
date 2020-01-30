@@ -80,7 +80,7 @@ parametersPanel <- function(model) {
 }
 
 simulationControls <- function(model) {
-    sidebarHeader <- "The simulation will update as you change the parameters below.  Use the 'Simulation' tab to iterate over a series of input parameters."
+    sidebarHeader <- "The time simulation will update as you change initial states and parameters below.  Use the 'Summarize' tab to iterate over a series of input parameters and produce summary plots of the results."
     stateFormat   <- function(name) {
                        paste("Initial", name, model$stateUnits)
                      }
@@ -199,7 +199,7 @@ function(input, output, session) {
         }
     })
     
-    # Hide run problem if the model is empty or has errors
+    # Hide run if the model is empty or has errors
     observe({
         model  <- model()
         errors <- !length(model$equations) > 0 || 
@@ -207,10 +207,8 @@ function(input, output, session) {
                   !all(checkEquationErrors())
 
         if (errors) {
-          print("errors")
           hideTab('navbar', 'run', session = session)
         } else {
-          print("no errors")
           showTab('navbar', 'run')
         }
         

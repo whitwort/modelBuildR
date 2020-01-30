@@ -10,7 +10,7 @@
         
     }
     
-    /* Add custom functions to add or remove CSS classes */
+    /* Custom message handlers to add or remove CSS classes */
     Shiny.addCustomMessageHandler('addClass', function(message) {
         $(message.selector).addClass(message.class)
     })
@@ -164,6 +164,7 @@
             selects[i].selectize.setValue(widget.data('context').values[i] || [])
         }
     }
+    
     var equationEditorBinding = new Shiny.InputBinding()
     $.extend(equationEditorBinding, {
     
@@ -268,5 +269,3 @@
     Shiny.outputBindings.register(equationEditorOutput, "equation-editor")
 
 })();
-
-
