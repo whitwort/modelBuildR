@@ -1,5 +1,8 @@
 library(shiny)
+library(ggplot2)
+library(tidyr)
 library(jsonlite)
+library(deSolve)
 
 # UI generators
 optionsPanel <- function(model) {
@@ -80,10 +83,13 @@ parametersPanel <- function(model) {
 }
 
 simulationControls <- function(model) {
-    sidebarHeader <- "The time simulation will update as you change initial states and parameters below.  Use the 'Summarize' tab to iterate over a series of input parameters and produce summary plots of the results."
-    stateFormat   <- function(name) {
-                       paste("Initial", name, model$stateUnits)
-                     }
+    sidebarHeader   <- "The time simulation will update as you change initial states and parameters below.  Use the 'Summarize' tab to iterate over a series of states or parameters to produce summary plots of the results."
+    stateFormat     <- function(name) {
+                         paste0("Initial ", name, " (", model$stateUnits, ")")
+                       }
+    parameterFormat <- function(name) {
+                         paste0(name, " (", model$parameterUnits, ")")
+                       }
     
     
     list( helpText(HTML(markdownToHTML(text = sidebarHeader, fragment.only = TRUE)))
@@ -95,6 +101,21 @@ simulationControls <- function(model) {
                                 )  
                   }
                 )
+        , lapply( names(model$parameters)
+                , function(name) {
+                    numericInput( name
+                                , parameterFormat(name)
+                                , model$parameters[name]
+                                )  
+                  }
+                )
+        , sliderInput( "timeScale"
+                     , paste0("Time scale (", model$timeUnits, ")")
+                     , min   = model$timeStart
+                     , max   = model$timeEnd
+                     , value = c(0, model$timeEnd / 2)
+                     , step  = (model$timeEnd - model$timeStart) / model$timeSteps
+                     )
         )
 }
 
@@ -143,16 +164,20 @@ function(input, output, session) {
               )
     })
     
-    checkEquationErrors <- reactive({
+    testEquations <- reactive({
         equations <- rateEquationText()
-        test <- sapply( equations
-                      , function(eq) {
-                          if (is.na(eq)) { return(FALSE) }
-                          p <- try(parse(text = eq), silent = TRUE)
-                          if (class(p) == "expression") { TRUE } else { FALSE }
-                      }
-                      , USE.NAMES = FALSE
-                      )
+        sapply( equations
+              , function(eq) {
+                  if (is.na(eq)) { return(FALSE) }
+                  p <- try(parse(text = eq), silent = TRUE)
+                  if (class(p) == "expression") { TRUE } else { FALSE }
+                }
+              , USE.NAMES = FALSE
+              )
+    })
+    
+    checkEquationErrors <- reactive({
+        test <- testEquations()
         
         if (length(test) < length(input$states)) {
             test[ (length(test) + 1):length(input$states) ] <- FALSE
@@ -214,6 +239,60 @@ function(input, output, session) {
         
     })
     
+    # Run the current model
+    states <- reactive({
+        sapply( names(model()$states)
+              , function(name) { input[[name]] }
+              )
+    })
+    
+    parameters <- reactive({
+        sapply( names(model()$parameters)
+              , function(name) { input[[name]] }
+              )
+    })
+    
+    runModel <- reactive({
+        model     <- model()
+        equations <- rateEquationText()
+        
+        if ( !all(testEquations())    || 
+             is.null(model$solver)    || 
+             is.null(input$timeScale) ||
+             length(equations) == 0   ||
+             length(equations) != length(model$states)
+           ) { 
+            return(NA) 
+        }
+        
+        expList   <- lapply( equations
+                           , function(eq) {
+                               parse(text = eq)  
+                             }
+                           )
+
+        f <- function(t, states, parameters) {
+            v <- sapply( expList
+                       , function(exp) { eval(exp) }
+                       )
+            list(v)
+        }
+        
+        solver <- solvers[[model$solver]]
+        
+        run <- solver( y     = states()
+                     , times = seq( from       = input$timeScale[1]
+                                  , to         = input$timeScale[2]
+                                  , length.out = model$timeSteps
+                                  )
+                     , func  = f
+                     , parms = parameters()
+                     )
+        
+        data.frame(run, check.names = FALSE) %>%
+            gather(key = "state", value = "value", -1)
+    })
+    
     # Build page output bindings
     output$equations <- renderEquationErrors({
         checkEquationErrors()
@@ -234,7 +313,17 @@ function(input, output, session) {
         model <- model()
         
         controls <- tagList(simulationControls(model))
-        kinetics <- tabPanel("Simulate")
+        kinetics <- tabPanel( "Simulate"
+                            , plotOutput("modelPlot")
+                            , wellPanel( sliderInput( "yaxis"
+                                                    , "Y-axis scale"
+                                                    , min = 0  # min and max updated dynamically in observer
+                                                    , max = max(model$states)
+                                                    , value = c(0, max(model$states))
+                                                    )
+                                
+                                       )
+                            )
         summary  <- tabPanel("Summarize")
         
         fluidPage( titlePanel(model$name)
@@ -244,6 +333,22 @@ function(input, output, session) {
                  )
     })
     
+    # Update model plot y-axis slider as the model changes
+    observe({
+        states <- states()
+        if (!is.list(states)) {
+            updateSliderInput(session, inputId = 'yaxis', max = max(states))
+        }
+    })
+
+    output$modelPlot <- renderPlot({
+        model <- model()
+        runModel() %>%
+            ggplot(aes(time, value, colour = state))   +
+            geom_line()                                +
+            ylab(paste("State", model$stateUnits))     +
+            ylim(input$yaxis[1], input$yaxis[2])
+    })
 
 }
 
